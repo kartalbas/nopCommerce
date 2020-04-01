@@ -19,8 +19,15 @@ namespace Nop.Data
 {
     public class MySqlNopDataProvider : BaseDataProvider, INopDataProvider
     {
+        #region Fields
+
+        //it's quite fast hash (to cheaply distinguish between objects)
+        private const string HASH_ALGORITHM = "SHA1";
+
+        #endregion
+
         #region Utils
-        
+
         protected MySqlConnectionStringBuilder GetConnectionStringBuilder()
         {
             return new MySqlConnectionStringBuilder(CurrentConnectionString);
@@ -312,11 +319,13 @@ namespace Nop.Data
         /// <param name="foreignColumn">Foreign key column name</param>
         /// <param name="primaryTable">Primary table</param>
         /// <param name="primaryColumn">Primary key column name</param>
-        /// <param name="isShort">Indicates whether to use short form</param>
         /// <returns>Name of a foreign key</returns>
-        public virtual string GetForeignKeyName(string foreignTable, string foreignColumn, string primaryTable, string primaryColumn, bool isShort = true)
+        public virtual string CreateForeignKeyName(string foreignTable, string foreignColumn, string primaryTable, string primaryColumn)
         {
-            return $"FK_{Guid.NewGuid():D}";
+            //mySql support only 64 chars for constraint name
+            //that is why we use hash function for create unique name
+            //see details on this topic: https://dev.mysql.com/doc/refman/8.0/en/identifier-length.html
+            return "FK_" + HashHelper.CreateHash(Encoding.UTF8.GetBytes($"{foreignTable}_{foreignColumn}_{primaryTable}_{primaryColumn}"), HASH_ALGORITHM);
         }
 
         /// <summary>
@@ -344,6 +353,11 @@ namespace Nop.Data
         /// Gets allowed a limit input value of the data for hashing functions, returns 0 if not limited
         /// </summary>
         public int SupportedLengthOfBinaryHash { get; } = 0;
+
+        /// <summary>
+        /// Gets a value indicating whether this data provider supports backup
+        /// </summary>
+        public virtual bool BackupSupported => false;
 
         #endregion
     }

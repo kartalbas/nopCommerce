@@ -10,7 +10,6 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Media;
 using Nop.Core.Infrastructure;
 using Nop.Data;
-using Nop.Data.Extensions;
 using Nop.Services.Caching.CachingDefaults;
 using Nop.Services.Caching.Extensions;
 using Nop.Services.Catalog;
@@ -713,10 +712,9 @@ namespace Nop.Services.Media
             query = query.OrderByDescending(p => p.Id);
 
             var key = NopMediaCachingDefaults.PicturesByVirtualPathCacheKey.FillCacheKey(virtualPath);
+            var pics = query.ToCachedList(key);
 
-            var pics = query.ToCachedPagedList(key, pageIndex, pageSize);
-
-            return pics;
+            return new PagedList<Picture>(pics, pageIndex, pageSize);
         }
 
         /// <summary>
@@ -865,7 +863,7 @@ namespace Nop.Services.Media
                 return picture;
 
             picture.VirtualPath = _fileProvider.GetVirtualPath(virtualPath);
-            _pictureRepository.Update(picture);
+            UpdatePicture(picture);
 
             return picture;
         }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,7 +7,6 @@ using System.Reflection;
 using System.Text;
 using System.Xml;
 using LinqToDB;
-using LinqToDB.Data;
 using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Configuration;
@@ -134,32 +132,21 @@ namespace Nop.Services.Localization
             var result = new HashSet<(string name, string value)>();
 
             using (var xmlReader = XmlReader.Create(xmlStreamReader))
-            {
                 while (xmlReader.ReadToFollowing("Language"))
                 {
-                    if (xmlReader.NodeType == XmlNodeType.Element && string.Equals(xmlReader.GetAttribute("Name"), language, StringComparison.OrdinalIgnoreCase))
-                    {
-                        using (var languageReader = xmlReader.ReadSubtree())
+                    if (xmlReader.NodeType != XmlNodeType.Element) 
+                        continue;
+
+                    using var languageReader = xmlReader.ReadSubtree();
+                    while (languageReader.ReadToFollowing("LocaleResource"))
+                        if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.GetAttribute("Name") is string name)
                         {
-                            while (languageReader.ReadToFollowing("LocaleResource"))
-                            {
-                                if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.GetAttribute("Name") is string name)
-                                {
-                                    using (var lrReader = languageReader.ReadSubtree())
-                                    {
-                                        if (lrReader.ReadToFollowing("Value") && lrReader.NodeType == XmlNodeType.Element)
-                                        {
-                                            result.Add((name, lrReader.ReadString()));
-                                        } 
-                                    }
-                                }
-                            }
+                            using var lrReader = languageReader.ReadSubtree();
+                            if (lrReader.ReadToFollowing("Value") && lrReader.NodeType == XmlNodeType.Element) result.Add((name, lrReader.ReadString()));
                         }
 
-                        break;
-                    }
+                    break;
                 }
-            }
 
             return result;
         }
@@ -445,7 +432,9 @@ namespace Nop.Services.Localization
             if (xmlStreamReader.EndOfStream)
                 return;
 
-            var lsNamesList = _lsrRepository.Table.Select(x => x.ResourceName).ToHashSet();
+            var lsNamesList = _lsrRepository.Table
+                .Where(lsr => lsr.LanguageId == language.Id)
+                .Select(x => x.ResourceName).ToHashSet();
 
             var lrsToUpdateList = new List<LocaleStringResource>();
             var lrsToInsertList = new List<LocaleStringResource>();
@@ -453,10 +442,11 @@ namespace Nop.Services.Localization
             foreach (var (name, value) in LoadLocaleResourcesFromStream(xmlStreamReader, language.Name))
             {
                 var lsr = new LocaleStringResource { LanguageId = language.Id, ResourceName = name, ResourceValue = value };
-                if (lsNamesList.Contains(name))
+                if (updateExistingResources && lsNamesList.Contains(name))
                 {
-                    if (updateExistingResources)
-                        lrsToUpdateList.Add(lsr);
+                    lsr.Id = GetLocaleStringResourceByName(name).Id;
+
+                    lrsToUpdateList.Add(lsr);
                 }
                 else
                 {
