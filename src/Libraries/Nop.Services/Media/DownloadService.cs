@@ -43,7 +43,7 @@ namespace Nop.Services.Media
             if (downloadId == 0)
                 return null;
 
-            return _downloadRepository.ToCachedGetById(downloadId);
+            return _downloadRepository.GetById(downloadId);
         }
 
         /// <summary>
@@ -74,6 +74,7 @@ namespace Nop.Services.Media
 
             _downloadRepository.Delete(download);
 
+            //event notification
             _eventPubisher.EntityDeleted(download);
         }
 
@@ -88,6 +89,7 @@ namespace Nop.Services.Media
 
             _downloadRepository.Insert(download);
 
+            //event notification
             _eventPubisher.EntityInserted(download);
         }
 
@@ -102,6 +104,7 @@ namespace Nop.Services.Media
 
             _downloadRepository.Update(download);
 
+            //event notification
             _eventPubisher.EntityUpdated(download);
         }
 

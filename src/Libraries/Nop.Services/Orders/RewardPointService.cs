@@ -209,7 +209,6 @@ namespace Nop.Services.Orders
             {
                 CustomerId = customer.Id,
                 StoreId = storeId,
-                OrderId = usedWithOrder?.Id,
                 Points = points,
                 PointsBalance = activatingDate.HasValue ? null : (int?)(GetRewardPointsBalance(customer.Id, storeId) + points),
                 UsedAmount = usedAmount,
@@ -250,7 +249,7 @@ namespace Nop.Services.Orders
             if (rewardPointsHistoryId == 0)
                 return null;
 
-            return _rewardPointsHistoryRepository.ToCachedGetById(rewardPointsHistoryId);
+            return _rewardPointsHistoryRepository.GetById(rewardPointsHistoryId);
         }
 
         /// <summary>

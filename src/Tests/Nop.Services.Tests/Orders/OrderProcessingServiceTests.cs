@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using FluentAssertions;
 using System.Linq;
+using FluentAssertions;
 using Moq;
 using Nop.Core;
-using Nop.Data;
+using Nop.Core.Caching;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
@@ -15,6 +15,7 @@ using Nop.Core.Domain.Payments;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Domain.Stores;
 using Nop.Core.Domain.Tax;
+using Nop.Data;
 using Nop.Services.Affiliates;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
@@ -109,7 +110,7 @@ namespace Nop.Services.Tests.Orders
         public new void SetUp()
         {
             _productService = new Mock<IProductService>();
-            
+
             _discountService = new Mock<IDiscountService>();
             _categoryService = new Mock<ICategoryService>();
             _manufacturerService = new Mock<IManufacturerService>();
@@ -154,15 +155,15 @@ namespace Nop.Services.Tests.Orders
             _storeContext = new Mock<IStoreContext>();
             _store = new Store { Id = 1 };
             _storeContext.Setup(x => x.CurrentStore).Returns(_store);
-            
+
             _catalogSettings = new CatalogSettings();
-            var cacheManager = new TestCacheManager();
+            var staticCacheManager = new TestCacheManager();
             _currencySettings = new CurrencySettings();
 
             //price calculation service
-            _priceCalcService = new PriceCalculationService(_catalogSettings, _currencySettings, _categoryService.Object,
+            _priceCalcService = new PriceCalculationService(_catalogSettings, _currencySettings, new FakeCacheKeyService(), _categoryService.Object,
                 _currencyService.Object, _customerService.Object, _discountService.Object, _manufacturerService.Object, _productAttributeParser.Object,
-                _productService.Object, cacheManager, _storeContext.Object, _workContext);
+                _productService.Object, staticCacheManager, _storeContext.Object, _workContext);
 
             _eventPublisher.Setup(x => x.Publish(It.IsAny<object>()));
 
@@ -187,6 +188,7 @@ namespace Nop.Services.Tests.Orders
             var shippingMethodCountryMappingRepository = new Mock<IRepository<ShippingMethodCountryMapping>>();
 
             _shippingService = new ShippingService(_addressService.Object,
+                new FakeCacheKeyService(),
                 _checkoutAttributeParser.Object,
                 _countryService.Object,
                 _customerService.Object,
@@ -222,6 +224,7 @@ namespace Nop.Services.Tests.Orders
                 _addressService.Object,
                 _countryService.Object,
                 _customerService.Object,
+                _eventPublisher.Object,
                 _genericAttributeService.Object,
                 _geoLookupService.Object,
                 _logger,
@@ -245,8 +248,8 @@ namespace Nop.Services.Tests.Orders
             _recurringPaymentHistoryRepository.Setup(r => r.Insert(It.IsAny<RecurringPaymentHistory>())).Callback((RecurringPaymentHistory rph) => recurringPaymentHistory.Add(rph));
             _recurringPaymentHistoryRepository.Setup(r => r.Table).Returns(recurringPaymentHistory.AsQueryable());
 
-            _orderService = new OrderService(_eventPublisher.Object, null, null, null, null, null, null, null, null, _recurringPaymentRepository.Object, _recurringPaymentHistoryRepository.Object, _shipmentService.Object);
-            
+            _orderService = new OrderService(new CachingSettings(), _eventPublisher.Object, null, null, null, null, null, null, null, null, _recurringPaymentRepository.Object, _recurringPaymentHistoryRepository.Object, _shipmentService.Object);
+
 
             _orderTotalCalcService = new OrderTotalCalculationService(_catalogSettings,
                 _addressService.Object,
@@ -317,7 +320,6 @@ namespace Nop.Services.Tests.Orders
                 _shippingService,
                 _shoppingCartService.Object,
                 _stateProvinceService.Object,
-                _storeContext.Object,
                 _taxService,
                 _vendorService.Object,
                 _webHelper.Object,
@@ -914,9 +916,5 @@ namespace Nop.Services.Tests.Orders
             _orderService.InsertRecurringPaymentHistory(new RecurringPaymentHistory { RecurringPaymentId = rp.Id });
             _orderProcessingService.GetCyclesRemaining(rp).Should().Be(0);
         }
-
-        //TODO write unit tests for the following methods:
-        //PlaceOrder
-        //CanCancelRecurringPayment, ProcessNextRecurringPayment, CancelRecurringPayment
     }
 }

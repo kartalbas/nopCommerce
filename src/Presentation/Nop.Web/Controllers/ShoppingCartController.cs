@@ -14,6 +14,7 @@ using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Html;
 using Nop.Core.Infrastructure;
+using Nop.Services.Caching;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Services.Customers;
@@ -44,6 +45,7 @@ namespace Nop.Web.Controllers
 
         private readonly CaptchaSettings _captchaSettings;
         private readonly CustomerSettings _customerSettings;
+        private readonly ICacheKeyService _cacheKeyService;
         private readonly ICheckoutAttributeParser _checkoutAttributeParser;
         private readonly ICheckoutAttributeService _checkoutAttributeService;
         private readonly ICurrencyService _currencyService;
@@ -64,7 +66,7 @@ namespace Nop.Web.Controllers
         private readonly IProductService _productService;
         private readonly IShoppingCartModelFactory _shoppingCartModelFactory;
         private readonly IShoppingCartService _shoppingCartService;
-        private readonly IStaticCacheManager _cacheManager;
+        private readonly IStaticCacheManager _staticCacheManager;
         private readonly IStoreContext _storeContext;
         private readonly ITaxService _taxService;
         private readonly IUrlRecordService _urlRecordService;
@@ -81,6 +83,7 @@ namespace Nop.Web.Controllers
 
         public ShoppingCartController(CaptchaSettings captchaSettings,
             CustomerSettings customerSettings,
+            ICacheKeyService cacheKeyService,
             ICheckoutAttributeParser checkoutAttributeParser,
             ICheckoutAttributeService checkoutAttributeService,
             ICurrencyService currencyService,
@@ -101,7 +104,7 @@ namespace Nop.Web.Controllers
             IProductService productService,
             IShoppingCartModelFactory shoppingCartModelFactory,
             IShoppingCartService shoppingCartService,
-            IStaticCacheManager cacheManager,
+            IStaticCacheManager staticCacheManager,
             IStoreContext storeContext,
             ITaxService taxService,
             IUrlRecordService urlRecordService,
@@ -114,6 +117,7 @@ namespace Nop.Web.Controllers
         {
             _captchaSettings = captchaSettings;
             _customerSettings = customerSettings;
+            _cacheKeyService = cacheKeyService;
             _checkoutAttributeParser = checkoutAttributeParser;
             _checkoutAttributeService = checkoutAttributeService;
             _currencyService = currencyService;
@@ -134,7 +138,7 @@ namespace Nop.Web.Controllers
             _productService = productService;
             _shoppingCartModelFactory = shoppingCartModelFactory;
             _shoppingCartService = shoppingCartService;
-            _cacheManager = cacheManager;
+            _staticCacheManager = staticCacheManager;
             _storeContext = storeContext;
             _taxService = taxService;
             _urlRecordService = urlRecordService;
@@ -858,9 +862,9 @@ namespace Nop.Web.Controllers
 
                 if (pictureId > 0)
                 {
-                    var productAttributePictureCacheKey = NopModelCacheDefaults.ProductAttributePictureModelKey.FillCacheKey(
-                        pictureId, _webHelper.IsCurrentConnectionSecured(), _storeContext.CurrentStore.Id);
-                    var pictureModel = _cacheManager.Get(productAttributePictureCacheKey, () =>
+                    var productAttributePictureCacheKey = _cacheKeyService.PrepareKeyForDefaultCache(NopModelCacheDefaults.ProductAttributePictureModelKey, 
+                        pictureId, _webHelper.IsCurrentConnectionSecured(), _storeContext.CurrentStore);
+                    var pictureModel = _staticCacheManager.Get(productAttributePictureCacheKey, () =>
                     {
                         var picture = _pictureService.GetPictureById(pictureId);
                         return picture == null ? new PictureModel() : new PictureModel
@@ -1132,7 +1136,7 @@ namespace Nop.Web.Controllers
                 .Select(idString => int.TryParse(idString, out var id) ? id : 0)
                 .Distinct().ToList();
 
-            var products = _productService.GetProductsByIds(cart.Select(item => item.ProductId).ToArray())
+            var products = _productService.GetProductsByIds(cart.Select(item => item.ProductId).Distinct().ToArray())
                 .ToDictionary(item => item.Id, item => item);
 
             //get order items with changed quantity
@@ -1141,7 +1145,7 @@ namespace Nop.Web.Controllers
                 //try to get a new quantity for the item, set 0 for items to remove
                 NewQuantity = itemIdsToRemove.Contains(item.Id) ? 0 : int.TryParse(form[$"itemquantity{item.Id}"], out var quantity) ? quantity : item.Quantity,
                 Item = item,
-                Product = products[item.ProductId]
+                Product = products.ContainsKey(item.ProductId) ? products[item.ProductId] : null
             }).Where(item => item.NewQuantity != item.Item.Quantity);
 
             //order cart items
@@ -1534,7 +1538,7 @@ namespace Nop.Web.Controllers
             var pageCart = _shoppingCartService.GetShoppingCart(pageCustomer, ShoppingCartType.Wishlist, _storeContext.CurrentStore.Id);
 
             var allWarnings = new List<string>();
-            var numberOfAddedItems = 0;
+            var countOfAddedItems = 0;
             var allIdsToAdd = form.ContainsKey("addtocart")
                 ? form["addtocart"].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList()
                 : new List<int>();
@@ -1550,7 +1554,7 @@ namespace Nop.Web.Controllers
                         sci.AttributesXml, sci.CustomerEnteredPrice,
                         sci.RentalStartDateUtc, sci.RentalEndDateUtc, sci.Quantity, true);
                     if (!warnings.Any())
-                        numberOfAddedItems++;
+                        countOfAddedItems++;
                     if (_shoppingCartSettings.MoveItemsFromWishlistToCart && //settings enabled
                         !customerGuid.HasValue && //own wishlist
                         !warnings.Any()) //no warnings ( already in the cart)
@@ -1563,7 +1567,7 @@ namespace Nop.Web.Controllers
                 }
             }
 
-            if (numberOfAddedItems > 0)
+            if (countOfAddedItems > 0)
             {
                 //redirect to the shopping cart page
 
@@ -1573,6 +1577,10 @@ namespace Nop.Web.Controllers
                 }
 
                 return RedirectToRoute("ShoppingCart");
+            }
+            else
+            {
+                _notificationService.WarningNotification(_localizationService.GetResource("Wishlist.AddToCart.NoAddedItems"));
             }
             //no items added. redisplay the wishlist page
 

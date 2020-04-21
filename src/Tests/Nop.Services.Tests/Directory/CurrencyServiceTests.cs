@@ -10,6 +10,7 @@ using Nop.Services.Directory;
 using Nop.Services.Events;
 using Nop.Services.Stores;
 using Nop.Services.Tests.FakeServices;
+using Nop.Tests;
 using NUnit.Framework;
 
 namespace Nop.Services.Tests.Directory
@@ -91,6 +92,7 @@ namespace Nop.Services.Tests.Directory
             var pluginService = new FakePluginService();
             _exchangeRatePluginManager = new ExchangeRatePluginManager(_currencySettings, pluginService);
             _currencyService = new CurrencyService(_currencySettings,
+                new FakeCacheKeyService(),
                 _eventPublisher.Object,
                 _exchangeRatePluginManager,
                 _currencyRepository.Object,

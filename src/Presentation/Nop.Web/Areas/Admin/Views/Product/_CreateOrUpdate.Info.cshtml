@@ -1,11 +1,8 @@
 ﻿@model ProductModel
 
 @inject IStoreService storeService
-@inject IProductTagService productTagService
 
 @using Nop.Core.Domain.Catalog;
-@using Nop.Services.Catalog;
-@using System.Text;
 @using Nop.Services
 @using Nop.Services.Stores
 
@@ -67,6 +64,8 @@
             $('#group-required-other-products').hide();
             $('#group-visible-individually').hide();
             $('#group-associated-products').show();
+            updateTableWidth('#associatedproducts-grid');
+
             $('#@Html.IdFor(model => model.VisibleIndividually)').prop('checked', true);
 
 
@@ -129,28 +128,9 @@
         }
     }
 
-    @{
-        //TODO move to Model
-        var productTags = productTagService.GetAllProductTags();
-        var productTagsSb = new StringBuilder();
-        productTagsSb.Append("var initialProductTags = [");
-        for (var i = 0; i < productTags.Count; i++)
-        {
-            var tag = productTags[i];
-            productTagsSb.Append("'");
-            productTagsSb.Append(JavaScriptEncoder.Default.Encode(tag.Name));
-            productTagsSb.Append("'");
-            if (i != productTags.Count - 1)
-            {
-                productTagsSb.Append(",");
-            }
-        }
-        productTagsSb.Append("]");
-    }
-
     //tags
     $(document).ready(function() {
-        @Html.Raw(productTagsSb.ToString())
+        @Html.Raw(Model.InitialProductTags)
         $("#@Html.IdFor(model => model.ProductTags)").tagEditor({
             autocomplete: {
                 delay: 0,
@@ -395,7 +375,7 @@
         </div>
     </div>
     <nop-nested-setting asp-for="ShowOnHomepage">
-        <div class="form-group @(Model.ProductEditorSettingsModel.DisplayOrder ? null : "advanced-setting")" id="pnlDisplayOrder" @(Model.IsLoggedInAsVendor ? Html.Raw("style='display: none;'") : null)>
+        <div class="form-group @(Model.ProductEditorSettingsModel.ShowOnHomepage ? null : "advanced-setting")" id="pnlDisplayOrder" @(Model.IsLoggedInAsVendor ? Html.Raw("style='display: none;'") : null)>
             <div class="col-md-3">
                 <nop-label asp-for="DisplayOrder" />
             </div>
@@ -613,7 +593,7 @@
             <span asp-validation-for="VendorId"></span>
         </div>
     </div>
-    <div class="@(Model.ProductEditorSettingsModel.RequireOtherProductsAddedToTheCart ? null : "advanced-setting")" id="group-required-other-products">
+    <div class="@(Model.ProductEditorSettingsModel.RequireOtherProductsAddedToCart ? null : "advanced-setting")" id="group-required-other-products">
         <div class="form-group">
             <div class="col-md-3">
                 <nop-label asp-for="RequireOtherProducts" />
@@ -704,7 +684,7 @@
         </div>
     </div>
     <nop-nested-setting asp-for="MarkAsNew">
-        <div class="form-group @(Model.ProductEditorSettingsModel.MarkAsNewStartDate ? null : "advanced-setting")" id="pnlMarkAsNewStartDateTimeUtc">
+        <div class="form-group @(Model.ProductEditorSettingsModel.MarkAsNew ? null : "advanced-setting")" id="pnlMarkAsNewStartDateTimeUtc">
             <div class="col-md-3">
                 <nop-label asp-for="MarkAsNewStartDateTimeUtc" />
             </div>
@@ -713,7 +693,7 @@
                 <span asp-validation-for="MarkAsNewStartDateTimeUtc"></span>
             </div>
         </div>
-        <div class="form-group @(Model.ProductEditorSettingsModel.MarkAsNewEndDate ? null : "advanced-setting")" id="pnlMarkAsNewEndDateTimeUtc">
+        <div class="form-group @(Model.ProductEditorSettingsModel.MarkAsNew ? null : "advanced-setting")" id="pnlMarkAsNewEndDateTimeUtc">
             <div class="col-md-3">
                 <nop-label asp-for="MarkAsNewEndDateTimeUtc" />
             </div>

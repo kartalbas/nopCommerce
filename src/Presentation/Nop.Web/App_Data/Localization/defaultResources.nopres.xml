@@ -634,7 +634,7 @@
     <Value>Registration not allowed. You can edit this in the admin area.</Value>
   </LocaleResource>
   <LocaleResource Name="Account.Register.Result.EmailValidation">
-    <Value>Your registration has been successfully completed. You have just been sent an email containing membership activation instructions.</Value>
+    <Value>Your registration has been successfully completed. You have just been sent an email containing activation instructions.</Value>
   </LocaleResource>
   <LocaleResource Name="Account.Register.Result.Standard">
     <Value>Your registration completed</Value>
@@ -4981,7 +4981,10 @@
     <Value>Scroll down through the list of plugins to find the newly installed plugin.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Plugins.Description.Step4">
-    <Value>Click on the 'Install' link to install the plugin.</Value>
+    <Value>Click on the 'Install' link to choose the plugin for install.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Plugins.Description.Step5">
+    <Value>Click on the 'Restart application to apply changes' button on the top panel to finish the installation process.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Plugins.DiscardChanges">
     <Value>Discard changes</Value>
@@ -7777,7 +7780,7 @@
     <Value>Backorders</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.BlockTitle.CommonInfo">
-    <Value>General information</Value>
+    <Value>Product info</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.BlockTitle.Inventory">
     <Value>Inventory</Value>
@@ -7786,13 +7789,13 @@
     <Value>Linked products</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.BlockTitle.Price">
-    <Value>Price</Value>
+    <Value>Prices</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.BlockTitle.Shipping">
     <Value>Shipping</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.BlockTitle.Tabs">
-    <Value>Tabs and display options</Value>
+    <Value>Panels and product species</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.Button">
     <Value>Settings</Value>
@@ -7821,14 +7824,8 @@
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.Discounts">
     <Value>Discounts</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.DisplayOrder">
-    <Value>Display order</Value>
-  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.DisplayStockAvailability">
     <Value>Display availability</Value>
-  </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.DisplayStockQuantity">
-    <Value>Display stock qty</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.DownloadableProduct">
     <Value>Downloadable product</Value>
@@ -7859,12 +7856,6 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.MarkAsNew">
     <Value>Mark as new</Value>
-  </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.MarkAsNewEndDate">
-    <Value>Mark as new. End date</Value>
-  </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.MarkAsNewStartDate">
-    <Value>Mark as new. Start date</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.MaximumCartQuantity">
     <Value>Maximum cart qty</Value>
@@ -7923,7 +7914,7 @@
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.RelatedProducts">
     <Value>Related products</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.RequireOtherProductsAddedToTheCart">
+  <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.RequireOtherProductsAddedToCart">
     <Value>Require other products</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.Seo">
@@ -10386,6 +10377,9 @@
   <LocaleResource Name="Admin.Customers.Customers.ActivityLog.ActivityLogType">
     <Value>Activity Log Type</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Customers.ActivityLog.Clear">
+    <Value>Clear activity log</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Customers.Customers.ActivityLog.Comment">
     <Value>Comment</Value>
   </LocaleResource>
@@ -11069,6 +11063,9 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Customers.OnlineCustomers.Fields.Location">
     <Value>Location</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Customers.NoCustomers">
+    <Value>No customers selected</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Dashboard">
     <Value>Dashboard</Value>
@@ -11913,6 +11910,9 @@
   <LocaleResource Name="Admin.Orders.List.Warehouse.Hint">
     <Value>Load orders with products from a specified warehouse.</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Orders.NoOrders">
+    <Value>No orders selected</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Orders.OrderItem.DeleteAssociatedGiftCardRecordError">
     <Value>This order item has an associated gift card record. Please delete it first</Value>
   </LocaleResource>
@@ -11963,10 +11963,7 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Orders.PdfInvoice">
     <Value>Invoice (PDF)</Value>
-  </LocaleResource>
-  <LocaleResource Name="Admin.Orders.PdfInvoice.NoOrders">
-    <Value>No orders selected</Value>
-  </LocaleResource>
+  </LocaleResource>  
   <LocaleResource Name="Admin.Orders.PdfInvoices">
     <Value>Print PDF invoices</Value>
   </LocaleResource>
@@ -12392,6 +12389,9 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Plugins.Saved">
     <Value>The plugin has been updated successfully.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Products.NoProducts">
+    <Value>No products selected</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Promotions">
     <Value>Promotions</Value>
@@ -13160,6 +13160,9 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Reports.Sales.Bestsellers.Store.Hint">
     <Value>Filter report by orders placed in a specific store.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Reports.Sales.Bestsellers.Total">
+    <Value>Total</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Reports.Sales.Bestsellers.Vendor">
     <Value>Vendor</Value>
@@ -14828,6 +14831,9 @@
   </LocaleResource>
   <LocaleResource Name="Checkout">
     <Value>Checkout</Value>
+  </LocaleResource>
+  <LocaleResource Name="Checkout.Address.NotFound">
+    <Value>Address can''t be loaded</Value>
   </LocaleResource>
   <LocaleResource Name="Checkout.Addresses.Invalid">
     <Value>You have {0} invalid address(es)</Value>
@@ -18267,6 +18273,9 @@
   <LocaleResource Name="Vendors.ApplyAccount.Email.Required">
     <Value>Email is required.</Value>
   </LocaleResource>
+  <LocaleResource Name="Vendors.ApplyAccount.IsAdmin">
+    <Value>Administrator cannot apply for vendor account</Value>
+  </LocaleResource>
   <LocaleResource Name="Vendors.ApplyAccount.Name">
     <Value>Vendor name</Value>
   </LocaleResource>
@@ -18296,6 +18305,9 @@
   </LocaleResource>
   <LocaleResource Name="Wishlist.AddToCart.Error">
     <Value>Some product(s) from wishlist could not be moved to the cart for some reasons.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Wishlist.AddToCart.NoAddedItems">
+    <Value>No products selected to add to cart.</Value>
   </LocaleResource>
   <LocaleResource Name="Wishlist.CartIsEmpty">
     <Value>The wishlist is empty!</Value>

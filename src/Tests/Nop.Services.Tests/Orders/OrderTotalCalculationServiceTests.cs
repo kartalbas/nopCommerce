@@ -41,6 +41,7 @@ namespace Nop.Services.Tests.Orders
         private readonly IProductService _productService;
         private readonly IRepository<CustomerRole> _customerRoleRepository;
         private readonly IShoppingCartService _shoppingCartService;
+        private readonly ITaxService _taxService;
 
         private readonly Mock<IAddressService> _addressService = new Mock<IAddressService>();
         private readonly Mock<ICurrencyService> _currencyService = new Mock<ICurrencyService>();
@@ -48,7 +49,6 @@ namespace Nop.Services.Tests.Orders
         private readonly Mock<IGenericAttributeService> _genericAttributeService = new Mock<IGenericAttributeService>();
         private readonly Mock<IPaymentService> _paymentService = new Mock<IPaymentService>();
         private readonly Mock<IStoreContext> _storeContext = new Mock<IStoreContext>();
-        private readonly Mock<IWorkContext> _workContext = new Mock<IWorkContext>();
 
         private readonly RewardPointsSettings _rewardPointsSettings = new RewardPointsSettings();
         private readonly ShippingPluginManager _shippingPluginManager;
@@ -124,7 +124,7 @@ namespace Nop.Services.Tests.Orders
             _addressService.Setup(x => x.GetAddressById(_taxSettings.DefaultTaxAddressId)).Returns(new Address { Id = _taxSettings.DefaultTaxAddressId });
             _paymentService.Setup(ps => ps.GetAdditionalHandlingFee(It.IsAny<IList<ShoppingCartItem>>(), "test1")).Returns(20);
 
-            _genericAttributeService.Setup(x => 
+            _genericAttributeService.Setup(x =>
                 x.GetAttribute<PickupPoint>(It.IsAny<Customer>(), NopCustomerDefaults.SelectedPickupPointAttribute, _storeContext.Object.CurrentStore.Id, null))
                 .Returns(new PickupPoint());
             _genericAttributeService.Setup(x => x.GetAttribute<string>(It.IsAny<Customer>(), NopCustomerDefaults.SelectedPaymentMethodAttribute, _storeContext.Object.CurrentStore.Id, null))
@@ -151,7 +151,7 @@ namespace Nop.Services.Tests.Orders
             var customerCustomerRoleMappingRepository = _fakeDataStore.RegRepository<CustomerCustomerRoleMapping>();
 
             _customerService = new FakeCustomerService(
-                customerRepository: customerRepository, 
+                customerRepository: customerRepository,
                 customerRoleRepository: _customerRoleRepository,
                 customerCustomerRoleMappingRepository: customerCustomerRoleMappingRepository,
                 storeContext: _storeContext.Object);
@@ -184,14 +184,14 @@ namespace Nop.Services.Tests.Orders
 
             IShippingService shippingService = new FakeShippingService(eventPublisher: _eventPublisher.Object,
                 customerSerice: _customerService,
-                genericAttributeService: _genericAttributeService.Object,                
+                genericAttributeService: _genericAttributeService.Object,
                 pickupPluginManager: pickupPluginManager,
                 productService: _productService,
                 shippingPluginManager: _shippingPluginManager,
                 storeContext: _storeContext.Object,
                 shippingSettings: _shippingSettings);
 
-            ITaxService taxService = new FakeTaxService(
+            _taxService = new FakeTaxService(
                 addressService: _addressService.Object,
                 customerService: _customerService,
                 genericAttributeService: _genericAttributeService.Object,
@@ -212,12 +212,13 @@ namespace Nop.Services.Tests.Orders
                 shippingService: shippingService,
                 shoppingCartService: _shoppingCartService,
                 storeContext: _storeContext.Object,
-                taxService: taxService,
+                taxService: _taxService,
                 shippingSettings: _shippingSettings,
                 taxSettings: _taxSettings,
                 rewardPointsSettings: _rewardPointsSettings);
 
-            var serviceProvider = new FakeServiceProvider(_shoppingCartService, _paymentService.Object);
+            var serviceProvider = new FakeServiceProvider(_shoppingCartService, _paymentService.Object,
+                _genericAttributeService.Object, _orderTotalCalcService, _taxService, _taxSettings);
 
             var nopEngine = new Mock<NopEngine>();
 
@@ -790,9 +791,7 @@ namespace Nop.Services.Tests.Orders
             var customer = _customerService.GetCustomerById(1);
             cart.ForEach(sci => sci.CustomerId = customer.Id);
 
-            var shippingRateComputationMethods = _shippingPluginManager.LoadActivePlugins(_shippingSettings.ActiveShippingRateComputationMethodSystemNames, _workContext.Object.CurrentCustomer, _storeContext.Object.CurrentStore.Id);
-
-            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, false, shippingRateComputationMethods, out var taxRate, out var appliedDiscounts);
+            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, false, out var taxRate, out var appliedDiscounts);
             shipping.Should().NotBeNull();
             //10 - default fixed shipping rate, 42.5 - additional shipping change
             shipping.Should().Be(52.5M);
@@ -865,9 +864,7 @@ namespace Nop.Services.Tests.Orders
             var customer = _customerService.GetCustomerById(1);
             cart.ForEach(sci => sci.CustomerId = customer.Id);
 
-            var shippingRateComputationMethods = _shippingPluginManager.LoadActivePlugins(_shippingSettings.ActiveShippingRateComputationMethodSystemNames, _workContext.Object.CurrentCustomer, _storeContext.Object.CurrentStore.Id);
-
-            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, true, shippingRateComputationMethods, out var taxRate, out var appliedDiscounts);
+            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, true, out var taxRate, out var appliedDiscounts);
             shipping.Should().NotBeNull();
             //10 - default fixed shipping rate, 42.5 - additional shipping change
             shipping.Should().Be(57.75M);
@@ -951,9 +948,7 @@ namespace Nop.Services.Tests.Orders
                 DiscountLimitation = DiscountLimitationType.Unlimited
             });
 
-            var shippingRateComputationMethods = _shippingPluginManager.LoadActivePlugins(_shippingSettings.ActiveShippingRateComputationMethodSystemNames, _workContext.Object.CurrentCustomer, _storeContext.Object.CurrentStore.Id);
-
-            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, false, shippingRateComputationMethods, out var taxRate, out var appliedDiscounts);
+            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, false, out var taxRate, out var appliedDiscounts);
             appliedDiscounts.Count.Should().Be(1);
             appliedDiscounts.First().Name.Should().Be("Discount 1");
             shipping.Should().NotBeNull();
@@ -1035,9 +1030,7 @@ namespace Nop.Services.Tests.Orders
                 DiscountLimitation = DiscountLimitationType.Unlimited
             });
 
-            var shippingRateComputationMethods = _shippingPluginManager.LoadActivePlugins(_shippingSettings.ActiveShippingRateComputationMethodSystemNames, _workContext.Object.CurrentCustomer, _storeContext.Object.CurrentStore.Id);
-
-            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, true, shippingRateComputationMethods, out var taxRate, out var appliedDiscounts);
+            var shipping = _orderTotalCalcService.GetShoppingCartShippingTotal(cart, true, out var taxRate, out var appliedDiscounts);
             appliedDiscounts.Count.Should().Be(1);
             appliedDiscounts.First().Name.Should().Be("Discount 1");
             shipping.Should().NotBeNull();
@@ -1088,17 +1081,13 @@ namespace Nop.Services.Tests.Orders
 
             var cart = new List<ShoppingCartItem> { sci1, sci2 };
             cart.ForEach(sci => sci.CustomerId = customer.Id);
-            //_discountService.Setup(ds => ds.GetAllDiscountsForCaching(DiscountType.AssignedToCategories, null, null, false)).Returns(new List<DiscountForCaching>());
-            //_discountService.Setup(ds => ds.GetAllDiscountsForCaching(DiscountType.AssignedToManufacturers, null, null, false)).Returns(new List<DiscountForCaching>());
 
             //56 - items, 10 - shipping (fixed), 20 - payment fee
-
-            var shippingRateComputationMethods = _shippingPluginManager.LoadActivePlugins(_shippingSettings.ActiveShippingRateComputationMethodSystemNames, _workContext.Object.CurrentCustomer, _storeContext.Object.CurrentStore.Id);
 
             //1. shipping is taxable, payment fee is taxable
             _taxSettings.ShippingIsTaxable = true;
             _taxSettings.PaymentMethodAdditionalFeeIsTaxable = true;
-            _orderTotalCalcService.GetTaxTotal(cart, shippingRateComputationMethods, out var taxRates).Should().Be(8.6M);
+            _orderTotalCalcService.GetTaxTotal(cart, out var taxRates).Should().Be(8.6M);
             taxRates.Should().NotBeNull();
             taxRates.Count.Should().Be(1);
             taxRates.ContainsKey(10).Should().BeTrue();
@@ -1107,7 +1096,7 @@ namespace Nop.Services.Tests.Orders
             //2. shipping is taxable, payment fee is not taxable
             _taxSettings.ShippingIsTaxable = true;
             _taxSettings.PaymentMethodAdditionalFeeIsTaxable = false;
-            _orderTotalCalcService.GetTaxTotal(cart, shippingRateComputationMethods, out taxRates).Should().Be(6.6M);
+            _orderTotalCalcService.GetTaxTotal(cart, out taxRates).Should().Be(6.6M);
             taxRates.Should().NotBeNull();
             taxRates.Count.Should().Be(1);
             taxRates.ContainsKey(10).Should().BeTrue();
@@ -1116,7 +1105,7 @@ namespace Nop.Services.Tests.Orders
             //3. shipping is not taxable, payment fee is taxable
             _taxSettings.ShippingIsTaxable = false;
             _taxSettings.PaymentMethodAdditionalFeeIsTaxable = true;
-            _orderTotalCalcService.GetTaxTotal(cart, shippingRateComputationMethods, out taxRates).Should().Be(7.6M);
+            _orderTotalCalcService.GetTaxTotal(cart, out taxRates).Should().Be(7.6M);
             taxRates.Should().NotBeNull();
             taxRates.Count.Should().Be(1);
             taxRates.ContainsKey(10).Should().BeTrue();
@@ -1125,7 +1114,7 @@ namespace Nop.Services.Tests.Orders
             //3. shipping is not taxable, payment fee is not taxable
             _taxSettings.ShippingIsTaxable = false;
             _taxSettings.PaymentMethodAdditionalFeeIsTaxable = false;
-            _orderTotalCalcService.GetTaxTotal(cart, shippingRateComputationMethods, out taxRates).Should().Be(5.6M);
+            _orderTotalCalcService.GetTaxTotal(cart, out taxRates).Should().Be(5.6M);
             taxRates.Should().NotBeNull();
             taxRates.Count.Should().Be(1);
             taxRates.ContainsKey(10).Should().BeTrue();

@@ -8,7 +8,7 @@ using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Stores;
 using Nop.Core.Domain.Topics;
 using Nop.Data;
-using Nop.Services.Caching.CachingDefaults;
+using Nop.Services.Caching;
 using Nop.Services.Caching.Extensions;
 using Nop.Services.Customers;
 using Nop.Services.Events;
@@ -26,12 +26,13 @@ namespace Nop.Services.Topics
 
         private readonly CatalogSettings _catalogSettings;
         private readonly IAclService _aclService;
+        private readonly ICacheKeyService _cacheKeyService;
         private readonly ICustomerService _customerService;
         private readonly IEventPublisher _eventPublisher;
         private readonly IRepository<AclRecord> _aclRepository;
         private readonly IRepository<StoreMapping> _storeMappingRepository;
         private readonly IRepository<Topic> _topicRepository;
-        private readonly IStaticCacheManager _cacheManager;
+        private readonly IStaticCacheManager _staticCacheManager;
         private readonly IStoreMappingService _storeMappingService;
         private readonly IWorkContext _workContext;
 
@@ -41,23 +42,25 @@ namespace Nop.Services.Topics
 
         public TopicService(CatalogSettings catalogSettings,
             IAclService aclService,
+            ICacheKeyService cacheKeyService,
             ICustomerService customerService,
             IEventPublisher eventPublisher,
             IRepository<AclRecord> aclRepository,
             IRepository<StoreMapping> storeMappingRepository,
             IRepository<Topic> topicRepository,
-            IStaticCacheManager cacheManager,
+            IStaticCacheManager staticCacheManager,
             IStoreMappingService storeMappingService,
             IWorkContext workContext)
         {
             _catalogSettings = catalogSettings;
             _aclService = aclService;
+            _cacheKeyService = cacheKeyService;
             _customerService = customerService;
             _eventPublisher = eventPublisher;
             _aclRepository = aclRepository;
             _storeMappingRepository = storeMappingRepository;
             _topicRepository = topicRepository;
-            _cacheManager = cacheManager;
+            _staticCacheManager = staticCacheManager;
             _storeMappingService = storeMappingService;
             _workContext = workContext;
         }
@@ -106,9 +109,10 @@ namespace Nop.Services.Topics
             if (string.IsNullOrEmpty(systemName))
                 return null;
 
-            var cacheKey = NopTopicCachingDefaults.TopicBySystemNameCacheKey.FillCacheKey(systemName, storeId, _customerService.GetCustomerRoleIds(_workContext.CurrentCustomer));
+            var cacheKey = _cacheKeyService.PrepareKeyForDefaultCache(NopTopicDefaults.TopicBySystemNameCacheKey
+                , systemName, storeId, _customerService.GetCustomerRoleIds(_workContext.CurrentCustomer));
 
-            var topic = _cacheManager.Get(cacheKey, () =>
+            var topic = _staticCacheManager.Get(cacheKey, () =>
             {
                 var query = _topicRepository.Table;
                 query = query.Where(t => t.SystemName == systemName);
@@ -144,8 +148,12 @@ namespace Nop.Services.Topics
         /// <returns>Topics</returns>
         public virtual IList<Topic> GetAllTopics(int storeId, bool ignorAcl = false, bool showHidden = false, bool onlyIncludedInTopMenu = false)
         {
-            var key = ignorAcl ? NopTopicCachingDefaults.TopicsAllCacheKey.FillCacheKey(storeId, showHidden, onlyIncludedInTopMenu) :
-                NopTopicCachingDefaults.TopicsAllWithACLCacheKey.FillCacheKey(storeId, showHidden, onlyIncludedInTopMenu, _customerService.GetCustomerRoleIds(_workContext.CurrentCustomer));
+            var key = ignorAcl
+                ? _cacheKeyService.PrepareKeyForDefaultCache(NopTopicDefaults.TopicsAllCacheKey, storeId, showHidden,
+                    onlyIncludedInTopMenu)
+                : _cacheKeyService.PrepareKeyForDefaultCache(NopTopicDefaults.TopicsAllWithACLCacheKey,
+                    storeId, showHidden, onlyIncludedInTopMenu,
+                    _customerService.GetCustomerRoleIds(_workContext.CurrentCustomer));
 
             var query = _topicRepository.Table;
             query = query.OrderBy(t => t.DisplayOrder).ThenBy(t => t.SystemName);

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Nop.Core;
+using Nop.Core.Caching;
 using Nop.Core.Domain;
 using Nop.Core.Domain.Affiliates;
 using Nop.Core.Domain.Blogs;
@@ -32,18 +33,18 @@ using Nop.Core.Domain.Tax;
 using Nop.Core.Domain.Topics;
 using Nop.Core.Domain.Vendors;
 using Nop.Core.Infrastructure;
+using Nop.Core.Security;
 using Nop.Data;
 using Nop.Services.Blogs;
 using Nop.Services.Caching.Extensions;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Customers;
-using Nop.Services.Defaults;
 using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.News;
-using NopSeoDefaults = Nop.Services.Defaults.NopSeoDefaults;
+using Nop.Services.Seo;
 
 namespace Nop.Services.Installation
 {
@@ -4571,7 +4572,7 @@ namespace Nop.Services.Installation
             //set hashed admin password
             var customerRegistrationService = EngineContext.Current.Resolve<ICustomerRegistrationService>();
             customerRegistrationService.ChangePassword(new ChangePasswordRequest(defaultUserEmail, false,
-                 PasswordFormat.Hashed, defaultUserPassword, null, NopCustomerServiceDefaults.DefaultHashedPasswordFormat));
+                 PasswordFormat.Hashed, defaultUserPassword, null, NopCustomerServicesDefaults.DefaultHashedPasswordFormat));
 
             //search engine (crawler) built-in user
             var searchEngineUser = new Customer
@@ -6123,7 +6124,6 @@ namespace Nop.Services.Installation
             settingService.SaveSetting(new CommonSettings
             {
                 UseSystemEmailForContactUsForm = true,
-                UseStoredProcedureForLoadingCategories = true,
 
                 DisplayJavaScriptDisabledWarning = false,
                 UseFullTextSearch = false,
@@ -6352,7 +6352,7 @@ namespace Nop.Services.Installation
                 CheckUsernameAvailabilityEnabled = false,
                 AllowUsersToChangeUsernames = false,
                 DefaultPasswordFormat = PasswordFormat.Hashed,
-                HashedPasswordFormat = NopCustomerServiceDefaults.DefaultHashedPasswordFormat,
+                HashedPasswordFormat = NopCustomerServicesDefaults.DefaultHashedPasswordFormat,
                 PasswordMinLength = 6,
                 PasswordRequireDigit = false,
                 PasswordRequireLowercase = false,
@@ -6787,7 +6787,7 @@ namespace Nop.Services.Installation
                 AutomaticallyChooseLanguage = true,
                 Enabled = false,
                 CaptchaType = CaptchaType.CheckBoxReCaptchaV2,
-                ReCaptchaV3ScoreThreshold = 0.5,
+                ReCaptchaV3ScoreThreshold = 0.5M,
                 ShowOnApplyVendorPage = false,
                 ShowOnBlogCommentPage = false,
                 ShowOnContactUsPage = false,
@@ -6815,6 +6815,19 @@ namespace Nop.Services.Installation
                 Password = string.Empty,
                 BypassOnLocal = true,
                 PreAuthenticate = true
+            });
+
+            settingService.SaveSetting(new CookieSettings
+            {
+                CompareProductsCookieExpires = 24 *10,
+                RecentlyViewedProductsCookieExpires = 24 *10,
+                CustomerCookieExpires = 24 * 365
+            });
+
+            settingService.SaveSetting(new CachingSettings
+            {
+                ShortTermCacheTime = 5,
+                DefaultCacheTime = NopCachingDefaults.CacheTime
             });
         }
 
@@ -10999,7 +11012,7 @@ namespace Nop.Services.Installation
                     });
 
                     product.ApprovedRatingSum = rating;
-                    //product.ApprovedTotalReviews = _dbContext.Set<ProductReview>().Count(r => r.ProductId == product.Id);
+                    product.ApprovedTotalReviews = 1;
                 }
             }
 
